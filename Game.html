@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Игровое поле с шариками</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: linear-gradient(to bottom right, #74ebd5, #acb6e5);
+            font-family: 'Arial', sans-serif;
+            height: 100vh;
+        }
+
+        #gameCanvas {
+            background-color: rgba(255, 255, 255, 0.9);
+            border: 2px solid #333;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            position: relative;
+            width: 200vw; /* Увеличиваем ширину игрового поля */
+            height: 200vh; /* Увеличиваем высоту игрового поля */
+            margin-top: 20px;
+            transition: transform 0.1s ease; /* Плавный переход для перемещения */
+        }
+
+        .ball {
+            position: absolute;
+            border-radius: 50%;
+            transition: opacity 0.5s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .small-ball {
+            background-color: #2ecc71;
+            width: 30px;
+            height: 30px;
+        }
+
+        .medium-ball {
+            background-color: #27ae60;
+            width: 50px;
+            height: 50px;
+        }
+
+        .red-ball {
+            background-color: #e74c3c;
+            width: 30px;
+            height: 30px;
+        }
+
+        .timer {
+            font-size: 28px;
+            font-weight: bold;
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            color: #333;
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
+        }
+
+        #playerBall {
+            background-color: #3498db;
+            width: 15px;
+            height: 15px;
+            transition: transform 0.2s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="timer" id="redTimer">Время красного буста: 0</div>
+    <div id="gameCanvas">
+        <div class="ball" id="playerBall"></div>
+    </div>
+
+    <script>
+        const playerBall = document.getElementById('playerBall');
+        const redTimerDisplay = document.getElementById('redTimer');
+        const canvas = document.getElementById('gameCanvas');
+        let ballRadius = 7.5;
+        let speed = 0.01;
+        let ballX = canvas.clientWidth / 2;
+        let ballY = canvas.clientHeight / 2;
+        let targetX = ballX;
+        let targetY = ballY;
+        let gameActive = true;
+        let redBoostTime = 0;
+
+        playerBall.style.left = `${ballX - ballRadius}px`;
+        playerBall.style.top = `${ballY - ballRadius}px`;
+
+        function updateTargetPosition(event) {
+            const canvasRect = canvas.getBoundingClientRect();
+            targetX = event.clientX ? event.clientX - canvasRect.left : event.touches[0].clientX - canvasRect.left;
+            targetY = event.clientY ? event.clientY - canvasRect.top : event.touches[0].clientY - canvasRect.top;
+        }
+
+        canvas.addEventListener('mousemove', updateTargetPosition);
+        canvas.addEventListener('touchmove', (event) => {
+            event.preventDefault(); // Предотвращаем прокрутку страницы
+            updateTargetPosition(event);
+        });
+
+        function update() {
+            if (!gameActive) return;
+
+            const dx = targetX - ballX;
+            const dy = targetY - ballY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            ballX += dx * speed * (distance < 10 ? distance / 50 : 1);
+            ballY += dy * speed * (distance < 10 ? distance / 50 : 1);
+
+            ballX = Math.max(ballRadius, Math.min(ballX, canvas.clientWidth - ballRadius));
+            ballY = Math.max(ballRadius, Math.min(ballY, canvas.clientHeight - ballRadius));
+
+            playerBall.style.left = `${ballX - ballRadius}px`;
+            playerBall.style.top = `${ballY - ballRadius}px`;
+
+            // Обновляем позицию "камеры"
+            const cameraX = ballX - (canvas.clientWidth / 2);
+            const cameraY = ballY - (canvas.clientHeight / 2);
+            canvas.style.transform = `translate(${-cameraX}px, ${-cameraY}px)`;
+
+            checkCollisions();
+            updateBoostTimer();
+
+            requestAnimationFrame(update);
+        }
+
+        function updateBoostTimer() {
+            if (redBoostTime > 0) {
+                redBoostTime -= 1 / 60;
+                redTimerDisplay.innerText = `Время красного буста: ${Math.ceil(redBoostTime)}`;
+                if (redBoostTime <= 0) {
+                    speed = 0.01;
+                    redTimerDisplay.innerText = "Время красного буста: 0";
+                }
+            }
+        }
+
+        function checkCollisions() {
+            const balls = document.querySelectorAll('.small-ball, .medium-ball, .red-ball');
+            balls.forEach(ball => {
+                const ballRect = ball.getBoundingClientRect();
+                const playerRect = playerBall.getBoundingClientRect();
+
+                if (
+                    playerRect.left < ballRect.right &&
+                    playerRect.right > ballRect.left &&
+                    playerRect.top < ballRect.bottom &&
+                    playerRect.bottom > ballRect.top
+                ) {
+                    ball.style.opacity = '0';
+                    setTimeout(() => ball.remove(), 500);
+
+                    if (ball.classList.contains('medium-ball')) {
+                        ballRadius += 0.5;
+                    } else if (ball.classList.contains('small-ball')) {
+                        ballRadius += 0.1;
+                    } else if (ball.classList.contains('red-ball')) {
+                        redBoostTime = 30;
+                        speed = 0.02;
+                        redTimerDisplay.innerText = `Время красного буста: ${redBoostTime}`;
+                    }
+
+                    playerBall.style.width = `${ballRadius * 2}px`;
+                    playerBall.style.height = `${ballRadius * 2}px`;
+                }
+            });
+        }
+
+        function createBall(sizeClass) {
+            const ball = document.createElement('div');
+            ball.classList.add('ball', sizeClass);
+            const x = Math.random() * (canvas.clientWidth - 40) + 20;
+            const y = Math.random() * (canvas.clientHeight - 40) + 20;
+            ball.style.left = `${x}px`;
+            ball.style.top = `${y}px`;
+            canvas.appendChild(ball);
+        }
+
+        setInterval(() => createBall('small-ball'), 1000);
+        setInterval(() => createBall('medium-ball'), 3000);
+        setInterval(() => createBall('red-ball'), 5000);
+
+        update();
+    </script>
+</body>
+</html>
+

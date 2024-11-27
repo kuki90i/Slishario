@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Стартовое меню</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #3498db;
+            color: white;
+            font-family: Arial, sans-serif;
+            transition: opacity 0.5s;
+        }
+        #menu {
+            text-align: center;
+            opacity: 1;
+            transition: opacity 0.5s;
+        }
+        .button {
+            padding: 15px 30px;
+            font-size: 24px;
+            background-color: #2980b9;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            color: white;
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: #1c5980;
+        }
+    </style>
+</head>
+<body>
+    <div id="menu">
+        <h1>Добро пожаловать в игру!</h1>
+        <button class="button" id="playButton">Играть</button>
+    </div>
+
+    <script>
+        const playButton = document.getElementById('playButton');
+
+        playButton.addEventListener('click', () => {
+            document.body.style.opacity = '0'; // Уменьшаем непрозрачность
+            setTimeout(() => {
+                window.location.href = 'Game.html'; // Переход на страницу игры
+            }, 500); // Время, соответствующее анимации
+        });
+
+        // Перенаправление на меню при обновлении страницы
+        window.onload = () => {
+            document.body.style.opacity = '1'; // Убедитесь, что страница видима
+        };
+    </script>
+</body>
+</html>
+
